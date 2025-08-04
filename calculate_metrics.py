@@ -1,7 +1,9 @@
 import os
-from metrics.ppl import add_perplexity_scores_to_csv
+import pandas as pd
+from pathlib import Path
 from metrics.bertscore import compute_bert_text_similarity
-from metrics.clip_score import load_clip_model_and_processor, process_csv_for_clip_scores
+from metrics.ppl import add_perplexity_scores_to_csv
+from metrics.clip_score import calculate_metaclip_scores_for_csv
 from metrics.aesthetic_score import add_aesthetic_scores_to_csv
 
 def main():
@@ -14,15 +16,14 @@ def main():
     Saving intermediate results acts as a checkpoint, allowing the process to
     resume from the last completed step if an error occurs.
     """
-    
+
     # 1. Create Output Directories and Configure File Paths
     TEMP_DIR = "./tmp"
     OUTPUT_DIR = "./dataset"
     os.makedirs(TEMP_DIR, exist_ok=True)
 
-    
     print("--- Human Contribution Metrics Calculation (FULL RUN) ---")
-    
+
     # Original input file
     input_file = "./dataset/prompt_thread/Increase_Length_Trend.csv"
 
@@ -30,14 +31,14 @@ def main():
     if not os.path.exists(input_file):
         print(f"Error: The input file '{input_file}' was not found.")
         return
-    
-    # Configure all intermediate and final file paths
+
+    # 모든 중간 및 최종 파일 경로를 설정합니다.
     final_output_file = os.path.join(OUTPUT_DIR, "metrics.csv")
     temp_ppl_file = os.path.join(TEMP_DIR, "temp_ppl_scores.csv")
     temp_clip_file = os.path.join(TEMP_DIR, "temp_clip_scores.csv")
-    
+
     current_input_file = input_file
-    
+
     # --- Step 1: Calculate Perplexity (PPL) ---
     print("\n[Step 1/4] Calculating Perplexity (PPL) scores...")
     try:
@@ -76,39 +77,37 @@ def main():
     # --- Step 3: Calculate CLIP Score ---
     print("\n[Step 3/4] Calculating CLIP scores...")
     try:
-        clip_processor, clip_model = load_clip_model_and_processor(
-            "openai/clip-vit-large-patch14"
-        )
         clip_output_file = os.path.join(TEMP_DIR, "ppl_bert_clip_scores.csv")
-        process_csv_for_clip_scores(
+        calculate_metaclip_scores_for_csv(
             input_csv_file=current_input_file,
             output_csv_file=clip_output_file,
             temp_output_csv_file=temp_clip_file,
-            processor=clip_processor,
-            model=clip_model
         )
         current_input_file = clip_output_file
         print("✔ CLIP score calculation step completed.")
     except Exception as e:
         print(f"\nAn error occurred during CLIP score calculation: {e}")
         return
-        
+
     # --- Step 4: Calculate Aesthetic Score ---
     print("\n[Step 4/4] Calculating Aesthetic scores...")
     try:
+        input_path = Path(current_input_file)
+        output_path = Path(final_output_file)
+
         add_aesthetic_scores_to_csv(
-            input_csv_path=current_input_file,
-            output_csv_path=final_output_file
+            input_csv_path=input_path,
+            output_csv_path=output_path
         )
-        current_input_file = final_output_file
+        current_input_file = str(output_path)
         print("✔ Aesthetic score calculation step completed.")
     except Exception as e:
         print(f"\nAn error occurred during Aesthetic score calculation: {e}")
         return
-        
+
     print("\n--- All metrics calculation completed successfully. ---")
     print(f"Final results are saved to '{final_output_file}'.")
-    
+
     # Clean up temporary files
     try:
         os.remove(os.path.join(TEMP_DIR, "ppl_scores.csv"))

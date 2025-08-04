@@ -80,24 +80,24 @@ def calculate_human_contribution_score(input_csv_path="./dataset/metrics.csv", o
     
     # Calculate the reduction in perplexity.
     # This code calculates the simple difference as written in the user's latest provided script.
-    df['perplexity reduction'] = np.maximum(0, (df['perplexity_prev']) - (df['perplexity_score']))
+    df['perplexity_reduction'] = np.maximum(0, (df['perplexity_prev']) - (df['perplexity_score']))
     
     # 5-2) Calculate semantic divergence
-    df['semantic divergence'] = np.exp(1 - df['semantic_similarity'])
+    df['semantic_divergence'] = np.exp(1 - df['semantic_similarity'])
     # Set the first step's semantic divergence to NaN as there is no previous data
-    df.loc[df['prompt_sequence_number'] == 1, 'semantic divergence'] = np.nan
+    df.loc[df['prompt_sequence_number'] == 1, 'semantic_divergence'] = np.nan
 
     # Calculate M_k
-    df['M_k'] = df['semantic divergence'] * df['perplexity reduction']
+    df['M_k'] = df['semantic_divergence'] * df['perplexity_reduction']
 
     # Total Human Contribution (H-revised) Calculation (Applying cumulative summation logic)
     df['Mk_Qk'] = df['M_k'] * df['delta Q_k']
     df['Cumulative_Mk_Qk'] = df.groupby('category_number')['Mk_Qk'].cumsum()
-    df['Human Contribution Score'] = df['Q0'] + df['Cumulative_Mk_Qk']
+    df['Human_Contribution_Score'] = df['Q0'] + df['Cumulative_Mk_Qk']
 
     # For the first prompt in each thread, the cumulative sum is NaN.
     # We set the score to Q0 in this case.
-    df.loc[df['prompt_sequence_number'] == 1, 'Human Contribution Score'] = df['Q0']
+    df.loc[df['prompt_sequence_number'] == 1, 'Human_Contribution_Score'] = df['Q0']
 
     # Save the final DataFrame
     df.to_csv(output_path, index=False)
