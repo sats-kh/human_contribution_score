@@ -7,4 +7,5 @@ scapy
 torch
 tqdm
 scikit-learn
+transformers
 huggingface-cli
