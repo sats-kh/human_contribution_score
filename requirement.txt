@@ -1,0 +1,10 @@
+alive-progress
+pandas
+numpy
+pyarrow
+fastparquet
+scapy
+torch
+tqdm
+scikit-learn
+huggingface-cli
