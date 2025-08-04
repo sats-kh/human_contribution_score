@@ -126,6 +126,8 @@ To run the full pipeline, execute the scripts in the following order from the pr
     ```
     # For images: Downloads image files into ./dataset/images
     # Ensure execute permissions: sudo chmod +x dataset/download_images.sh
+    cd dataset
+    git clone https://github.com/poloclub/diffusiondb
     bash dataset/download_images.sh
 
     # For prompts: Downloads and filters metadata, saving to removed_metadata.parquet
